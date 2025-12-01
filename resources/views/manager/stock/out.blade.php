@@ -58,8 +58,15 @@
                                 <td class="px-6 py-4 text-slate-400">{{ $movement->notes ?? '-' }}</td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex gap-2 justify-end">
-                                        <button onclick="openEditModal({{ $movement->id }})" class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 transition font-medium text-sm">✏️ Edit</button>
-                                        <button onclick="deleteItem({{ $movement->id }})" class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition font-medium text-sm">🗑️ Hapus</button>
+                                        @if($movement->status === 'pending')
+                                            <button onclick="openEditModal({{ $movement->id }})" class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 transition font-medium text-sm">✏️ Edit</button>
+                                            <button onclick="deleteItem({{ $movement->id }})" class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition font-medium text-sm">🗑️ Hapus</button>
+                                        @elseif($movement->status === 'approved')
+                                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm">✓ Approved</span>
+                                            <button onclick="deleteItem({{ $movement->id }})" class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition font-medium text-sm" title="Akan revert stok">🗑️ Hapus</button>
+                                        @elseif($movement->status === 'rejected')
+                                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-red-500/10 text-red-400 text-sm">✗ Rejected</span>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

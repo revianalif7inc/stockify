@@ -65,18 +65,19 @@ class StockMovementRepository implements StockMovementRepositoryInterface
     {
         return DB::transaction(function () use ($id, $data) {
             $movement = StockMovement::findOrFail($id);
+
+            // Hanya bisa edit jika pending, tidak boleh edit yang sudah approved/rejected
+            if ($movement->status !== 'pending') {
+                throw new Exception('Hanya bisa mengedit item dengan status pending. Item ini sudah ' . $movement->status . '.');
+            }
+
             $product = Product::findOrFail($movement->product_id);
 
             $oldQty = $movement->quantity;
             $newQty = $data['quantity'];
 
-            // If movement type is 'out', ensure enough stock if increasing quantity
-            if ($movement->type === 'out' && $newQty > $oldQty) {
-                $diffCheck = $newQty - $oldQty;
-                if ($product->current_stock < $diffCheck) {
-                    throw new Exception('Stok tidak mencukupi untuk mengurangi lebih banyak lagi.');
-                }
-            }
+            // Jika pending, stok belum berubah, jadi tidak perlu check stok
+            // Stok akan berubah hanya saat approved
 
             // Cegah penghapusan notes: jika notes sudah ada, tidak boleh diubah menjadi kosong/null
             $newNotes = $data['notes'] ?? $movement->notes;
@@ -89,16 +90,6 @@ class StockMovementRepository implements StockMovementRepositoryInterface
                 'quantity' => $newQty,
                 'notes' => $newNotes,
             ]);
-
-            // Adjust product stock by difference
-            $diff = $newQty - $oldQty; // can be negative
-            if ($diff != 0) {
-                if ($movement->type === 'in') {
-                    $product->increment('current_stock', $diff);
-                } else { // out
-                    $product->decrement('current_stock', $diff);
-                }
-            }
 
             return $movement;
         });
@@ -113,11 +104,14 @@ class StockMovementRepository implements StockMovementRepositoryInterface
             $movement = StockMovement::findOrFail($id);
             $product = Product::findOrFail($movement->product_id);
 
-            // Revert stock change
-            if ($movement->type === 'in') {
-                $product->decrement('current_stock', $movement->quantity);
-            } else {
-                $product->increment('current_stock', $movement->quantity);
+            // Hanya revert stock jika sudah approved
+            // Jika pending/rejected, stok tidak terpengaruh
+            if ($movement->status === 'approved') {
+                if ($movement->type === 'in') {
+                    $product->decrement('current_stock', $movement->quantity);
+                } else {
+                    $product->increment('current_stock', $movement->quantity);
+                }
             }
 
             $movement->delete();

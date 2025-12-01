@@ -132,8 +132,16 @@ class StockController extends Controller
         try {
             $movement = StockMovement::where('id', $id)->where('type', 'in')->firstOrFail();
 
+            // Hanya bisa delete jika pending atau approved
+            if (!in_array($movement->status, ['pending', 'approved'])) {
+                return back()->with('error', 'Hanya bisa menghapus barang dengan status pending atau approved.');
+            }
+
             $this->stockService->deleteMovement($id);
-            return redirect()->route('manager.stock.in')->with('success', 'Barang Masuk berhasil dihapus dan stok direvert.');
+            $message = $movement->status === 'pending'
+                ? 'Barang Masuk berhasil dihapus (stok tidak berubah).'
+                : 'Barang Masuk berhasil dihapus dan stok direvert.';
+            return redirect()->route('manager.stock.in')->with('success', $message);
         } catch (Exception $e) {
             return back()->with('error', 'Gagal menghapus Barang Masuk: ' . $e->getMessage());
         }
@@ -174,8 +182,16 @@ class StockController extends Controller
         try {
             $movement = StockMovement::where('id', $id)->where('type', 'out')->firstOrFail();
 
+            // Hanya bisa delete jika pending atau approved
+            if (!in_array($movement->status, ['pending', 'approved'])) {
+                return back()->with('error', 'Hanya bisa menghapus barang dengan status pending atau approved.');
+            }
+
             $this->stockService->deleteMovement($id);
-            return redirect()->route('manager.stock.out')->with('success', 'Barang Keluar berhasil dihapus dan stok direvert.');
+            $message = $movement->status === 'pending'
+                ? 'Barang Keluar berhasil dihapus (stok tidak berubah).'
+                : 'Barang Keluar berhasil dihapus dan stok direvert.';
+            return redirect()->route('manager.stock.out')->with('success', $message);
         } catch (Exception $e) {
             return back()->with('error', 'Gagal menghapus Barang Keluar: ' . $e->getMessage());
         }
