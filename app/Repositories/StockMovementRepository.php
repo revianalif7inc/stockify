@@ -132,7 +132,7 @@ class StockMovementRepository implements StockMovementRepositoryInterface
     {
         return DB::transaction(function () use ($id) {
             $movement = StockMovement::findOrFail($id);
-            
+
             if ($movement->status !== 'pending') {
                 throw new Exception('Hanya movement dengan status pending yang bisa diapprove');
             }
@@ -163,7 +163,7 @@ class StockMovementRepository implements StockMovementRepositoryInterface
     {
         return DB::transaction(function () use ($id) {
             $movement = StockMovement::findOrFail($id);
-            
+
             if ($movement->status !== 'pending') {
                 throw new Exception('Hanya movement dengan status pending yang bisa ditolak');
             }

@@ -75,7 +75,7 @@ class StockController extends Controller
     {
         try {
             $movement = StockMovement::where('id', $id)->where('type', 'in')->firstOrFail();
-            
+
             // Gunakan stockService untuk approve movement
             $this->stockService->approveMovement($id);
 
@@ -110,7 +110,7 @@ class StockController extends Controller
     {
         try {
             $movement = StockMovement::where('id', $id)->where('type', 'out')->firstOrFail();
-            
+
             // Gunakan stockService untuk approve movement
             $this->stockService->approveMovement($id);
 
@@ -138,7 +138,7 @@ class StockController extends Controller
     {
         try {
             $movement = StockMovement::where('id', $id)->where('type', 'in')->firstOrFail();
-            
+
             // Gunakan stockService untuk reject movement
             $this->stockService->rejectMovement($id);
 
@@ -166,7 +166,7 @@ class StockController extends Controller
     {
         try {
             $movement = StockMovement::where('id', $id)->where('type', 'out')->firstOrFail();
-            
+
             // Gunakan stockService untuk reject movement
             $this->stockService->rejectMovement($id);
 

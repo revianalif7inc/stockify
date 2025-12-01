@@ -76,7 +76,8 @@
                     </div>
                     <div>
                         <label class="block mb-2 text-sm font-semibold text-slate-200">Jumlah Pesanan</label>
-                        <input type="number" id="quantityInput" name="quantity" min="1" placeholder="Masukkan jumlah" required
+                        <input type="number" id="quantityInput" name="quantity" min="1" placeholder="Masukkan jumlah"
+                            required
                             class="w-full px-4 py-2 rounded-lg text-sm border border-slate-700 focus:outline-none focus:ring-2 bg-slate-800 text-white">
                     </div>
                     <div>
