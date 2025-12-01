@@ -34,8 +34,10 @@
                                 <td class="px-4 py-3 text-slate-300">{{ $task['type'] == 'in' ? 'Masuk' : 'Keluar' }}</td>
                                 <td class="px-4 py-3">
                                     @php $status = $task['status'] ?? ($task['movement']->status ?? 'pending'); @endphp
-                                    @if($status === 'confirmed')
-                                        <span class="px-2 py-1 rounded bg-emerald-600 text-white text-xs">Confirmed</span>
+                                    @if($status === 'approved')
+                                        <span class="px-2 py-1 rounded bg-emerald-600 text-white text-xs">Approved</span>
+                                    @elseif($status === 'rejected')
+                                        <span class="px-2 py-1 rounded bg-red-600 text-white text-xs">Rejected</span>
                                     @else
                                         <span class="px-2 py-1 rounded bg-yellow-600 text-white text-xs">Pending</span>
                                     @endif

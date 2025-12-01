@@ -128,6 +128,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->group(function (
     Route::get('/products/{id}/edit', 'App\Http\Controllers\Manager\ProductController@edit')->name('manager.products.edit');
     Route::put('/products/{id}', 'App\Http\Controllers\Manager\ProductController@update')->name('manager.products.update');
     Route::get('/low-stock', 'App\Http\Controllers\Manager\ProductController@lowStock')->name('manager.low_stock');
+    Route::post('/reorder', 'App\Http\Controllers\Manager\ProductController@storeReorder')->name('manager.reorder.store');
 
     // Supplier Routes
     Route::get('/suppliers', 'App\Http\Controllers\Manager\SupplierController@index')->name('manager.suppliers.index');
@@ -153,10 +154,12 @@ Route::middleware(['auth', 'role:staff'])->prefix('staff')->group(function () {
     Route::post('/stock/in', 'App\Http\Controllers\Staff\StockController@storeIn')->name('staff.stock.in.store');
     Route::get('/stock/in/{id}/confirm', 'App\Http\Controllers\Staff\StockController@confirmIn')->name('staff.stock.in.confirm');
     Route::post('/stock/in/{id}/confirm', 'App\Http\Controllers\Staff\StockController@doConfirmIn')->name('staff.stock.in.do_confirm');
+    Route::post('/stock/in/{id}/reject', 'App\Http\Controllers\Staff\StockController@rejectIn')->name('staff.stock.in.reject');
     Route::get('/stock/out', 'App\Http\Controllers\Staff\StockController@indexOut')->name('staff.stock.out');
     Route::post('/stock/out', 'App\Http\Controllers\Staff\StockController@storeOut')->name('staff.stock.out.store');
     Route::get('/stock/out/{id}/confirm', 'App\Http\Controllers\Staff\StockController@confirmOut')->name('staff.stock.out.confirm');
     Route::post('/stock/out/{id}/confirm', 'App\Http\Controllers\Staff\StockController@doConfirmOut')->name('staff.stock.out.do_confirm');
+    Route::post('/stock/out/{id}/reject', 'App\Http\Controllers\Staff\StockController@rejectOut')->name('staff.stock.out.reject');
 });
 
 // Route Home Page (Jika ada)

@@ -32,14 +32,8 @@ class StockController extends Controller
     {
         $query = StockMovement::with('product', 'user')
             ->where('type', 'in')
+            ->where('status', 'pending') // Hanya tampilkan yang pending
             ->orderBy('created_at', 'desc');
-
-        // Only show unconfirmed items if status column exists
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $query->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', '!=', 'confirmed');
-            });
-        }
 
         $products = $query->get();
         return view('staff.stock.in', compact('products'));
@@ -56,14 +50,8 @@ class StockController extends Controller
     {
         $query = StockMovement::with('product', 'user')
             ->where('type', 'out')
+            ->where('status', 'pending') // Hanya tampilkan yang pending
             ->orderBy('created_at', 'desc');
-
-        // Only show unconfirmed items if status column exists
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $query->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', '!=', 'confirmed');
-            });
-        }
 
         $products = $query->get();
         return view('staff.stock.out', compact('products'));
@@ -85,17 +73,16 @@ class StockController extends Controller
     // Konfirmasi Barang Masuk (POST)
     public function doConfirmIn($id)
     {
-        $movement = StockMovement::where('id', $id)->where('type', 'in')->firstOrFail();
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $movement->status = 'confirmed';
-        }
-        $movement->save();
-
-        // create audit log
         try {
+            $movement = StockMovement::where('id', $id)->where('type', 'in')->firstOrFail();
+            
+            // Gunakan stockService untuk approve movement
+            $this->stockService->approveMovement($id);
+
+            // create audit log
             AuditLog::create([
                 'user_id' => Auth::id(),
-                'action' => 'confirm_in',
+                'action' => 'approve_in',
                 'auditable_type' => StockMovement::class,
                 'auditable_id' => $movement->id,
                 'data' => [
@@ -104,12 +91,11 @@ class StockController extends Controller
                     'notes' => $movement->notes,
                 ],
             ]);
-        } catch (\Exception $e) {
-            // Don't block user flow if audit logging fails; optionally log the error
-            \Log::warning('Failed to write audit log for confirmIn: ' . $e->getMessage());
-        }
 
-        return redirect()->route('staff.dashboard')->with('success', 'Barang masuk telah dikonfirmasi.');
+            return redirect()->route('staff.stock.in')->with('success', 'Barang masuk telah disetujui dan stok diupdate.');
+        } catch (\Exception $e) {
+            return redirect()->route('staff.stock.in')->with('error', 'Error: ' . $e->getMessage());
+        }
     }
 
     // Konfirmasi Barang Keluar (GET)
@@ -122,17 +108,16 @@ class StockController extends Controller
     // Konfirmasi Barang Keluar (POST)
     public function doConfirmOut($id)
     {
-        $movement = StockMovement::where('id', $id)->where('type', 'out')->firstOrFail();
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $movement->status = 'confirmed';
-        }
-        $movement->save();
-
-        // create audit log
         try {
+            $movement = StockMovement::where('id', $id)->where('type', 'out')->firstOrFail();
+            
+            // Gunakan stockService untuk approve movement
+            $this->stockService->approveMovement($id);
+
+            // create audit log
             AuditLog::create([
                 'user_id' => Auth::id(),
-                'action' => 'confirm_out',
+                'action' => 'approve_out',
                 'auditable_type' => StockMovement::class,
                 'auditable_id' => $movement->id,
                 'data' => [
@@ -141,10 +126,66 @@ class StockController extends Controller
                     'notes' => $movement->notes,
                 ],
             ]);
-        } catch (\Exception $e) {
-            \Log::warning('Failed to write audit log for confirmOut: ' . $e->getMessage());
-        }
 
-        return redirect()->route('staff.dashboard')->with('success', 'Barang keluar telah dikonfirmasi.');
+            return redirect()->route('staff.stock.out')->with('success', 'Barang keluar telah disetujui dan stok diupdate.');
+        } catch (\Exception $e) {
+            return redirect()->route('staff.stock.out')->with('error', 'Error: ' . $e->getMessage());
+        }
+    }
+
+    // Tolak Barang Masuk
+    public function rejectIn($id)
+    {
+        try {
+            $movement = StockMovement::where('id', $id)->where('type', 'in')->firstOrFail();
+            
+            // Gunakan stockService untuk reject movement
+            $this->stockService->rejectMovement($id);
+
+            // create audit log
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'reject_in',
+                'auditable_type' => StockMovement::class,
+                'auditable_id' => $movement->id,
+                'data' => [
+                    'product_id' => $movement->product_id,
+                    'quantity' => $movement->quantity,
+                    'notes' => $movement->notes,
+                ],
+            ]);
+
+            return redirect()->route('staff.stock.in')->with('success', 'Barang masuk telah ditolak.');
+        } catch (\Exception $e) {
+            return redirect()->route('staff.stock.in')->with('error', 'Error: ' . $e->getMessage());
+        }
+    }
+
+    // Tolak Barang Keluar
+    public function rejectOut($id)
+    {
+        try {
+            $movement = StockMovement::where('id', $id)->where('type', 'out')->firstOrFail();
+            
+            // Gunakan stockService untuk reject movement
+            $this->stockService->rejectMovement($id);
+
+            // create audit log
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'reject_out',
+                'auditable_type' => StockMovement::class,
+                'auditable_id' => $movement->id,
+                'data' => [
+                    'product_id' => $movement->product_id,
+                    'quantity' => $movement->quantity,
+                    'notes' => $movement->notes,
+                ],
+            ]);
+
+            return redirect()->route('staff.stock.out')->with('success', 'Barang keluar telah ditolak.');
+        } catch (\Exception $e) {
+            return redirect()->route('staff.stock.out')->with('error', 'Error: ' . $e->getMessage());
+        }
     }
 }

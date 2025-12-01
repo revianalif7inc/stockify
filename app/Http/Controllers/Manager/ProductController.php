@@ -63,7 +63,9 @@ class ProductController extends Controller
             ->orderBy('current_stock')
             ->get();
 
-        return view('manager.low_stock', compact('products'));
+        $suppliers = \App\Models\Supplier::all();
+
+        return view('manager.low_stock', compact('products', 'suppliers'));
     }
 
     /**
@@ -123,5 +125,46 @@ class ProductController extends Controller
 
         return redirect()->route('manager.stock.monitoring')
             ->with('success', 'Produk berhasil diupdate');
+    }
+
+    /**
+     * Menyimpan permintaan reorder stok
+     * Otomatis membuat StockMovement dengan status pending
+     */
+    public function storeReorder(Request $request)
+    {
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'quantity' => 'required|integer|min:1',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            // 1. Simpan reorder request
+            \App\Models\ReorderRequest::create([
+                'product_id' => $validated['product_id'],
+                'supplier_id' => $validated['supplier_id'],
+                'user_id' => auth()->id(),
+                'quantity' => $validated['quantity'],
+                'notes' => $validated['notes'] ?? null,
+                'status' => 'pending',
+            ]);
+
+            // 2. Buat stock in movement dengan status pending
+            // Staff akan mengkonfirmasi ini nanti
+            \App\Models\StockMovement::create([
+                'product_id' => $validated['product_id'],
+                'user_id' => auth()->id(),
+                'type' => 'in',
+                'quantity' => $validated['quantity'],
+                'notes' => 'Reorder dari supplier: ' . ($validated['notes'] ?? ''),
+                'status' => 'pending',
+            ]);
+
+            return redirect()->back()->with('success', 'Pesanan reorder berhasil dibuat. Menunggu konfirmasi staff untuk masuk ke stok.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membuat pesanan reorder: ' . $e->getMessage());
+        }
     }
 }

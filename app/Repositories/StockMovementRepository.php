@@ -11,7 +11,7 @@ use Exception;
 class StockMovementRepository implements StockMovementRepositoryInterface
 {
     /**
-     * Mencatat Barang Masuk dan mengupdate stok produk.
+     * Mencatat Barang Masuk dengan status pending (menunggu konfirmasi staff).
      */
     public function recordStockIn(array $data)
     {
@@ -19,24 +19,23 @@ class StockMovementRepository implements StockMovementRepositoryInterface
             $product = Product::findOrFail($data['product_id']);
             $quantity = $data['quantity'];
 
-            // 1. Catat pergerakan stok
+            // 1. Catat pergerakan stok dengan status PENDING
+            // Stok belum diupdate sampai staff mengkonfirmasi
             $movement = StockMovement::create([
                 'product_id' => $product->id,
-                'user_id' => $data['user_id'], // ID Staff/Manajer yang mencatat
+                'user_id' => $data['user_id'], // ID Manager yang mencatat
                 'type' => 'in',
                 'quantity' => $quantity,
                 'notes' => $data['notes'] ?? null,
+                'status' => 'pending', // Status pending menunggu approval staff
             ]);
-
-            // 2. Update stok produk
-            $product->increment('current_stock', $quantity);
 
             return $movement;
         });
     }
 
     /**
-     * Mencatat Barang Keluar dan mengupdate stok produk.
+     * Mencatat Barang Keluar dengan status pending (menunggu konfirmasi staff).
      */
     public function recordStockOut(array $data)
     {
@@ -44,17 +43,16 @@ class StockMovementRepository implements StockMovementRepositoryInterface
             $product = Product::findOrFail($data['product_id']);
             $quantity = $data['quantity'];
 
-            // 1. Catat pergerakan stok
+            // 1. Catat pergerakan stok dengan status PENDING
+            // Stok belum diupdate sampai staff mengkonfirmasi
             $movement = StockMovement::create([
                 'product_id' => $product->id,
                 'user_id' => $data['user_id'],
                 'type' => 'out',
                 'quantity' => $quantity,
                 'notes' => $data['notes'] ?? null,
+                'status' => 'pending', // Status pending menunggu approval staff
             ]);
-
-            // 2. Update stok produk
-            $product->decrement('current_stock', $quantity);
 
             return $movement;
         });
@@ -124,6 +122,56 @@ class StockMovementRepository implements StockMovementRepositoryInterface
 
             $movement->delete();
             return true;
+        });
+    }
+
+    /**
+     * Approve pending stock movement - update stock sekarang
+     */
+    public function approveMovement($id)
+    {
+        return DB::transaction(function () use ($id) {
+            $movement = StockMovement::findOrFail($id);
+            
+            if ($movement->status !== 'pending') {
+                throw new Exception('Hanya movement dengan status pending yang bisa diapprove');
+            }
+
+            $product = Product::findOrFail($movement->product_id);
+
+            // Update stok berdasarkan tipe
+            if ($movement->type === 'in') {
+                $product->increment('current_stock', $movement->quantity);
+            } else { // out
+                if ($product->current_stock < $movement->quantity) {
+                    throw new Exception('Stok tidak mencukupi untuk mengeluarkan barang');
+                }
+                $product->decrement('current_stock', $movement->quantity);
+            }
+
+            // Set status approved
+            $movement->update(['status' => 'approved']);
+
+            return $movement;
+        });
+    }
+
+    /**
+     * Reject pending stock movement
+     */
+    public function rejectMovement($id)
+    {
+        return DB::transaction(function () use ($id) {
+            $movement = StockMovement::findOrFail($id);
+            
+            if ($movement->status !== 'pending') {
+                throw new Exception('Hanya movement dengan status pending yang bisa ditolak');
+            }
+
+            // Set status rejected - stok tidak berubah
+            $movement->update(['status' => 'rejected']);
+
+            return $movement;
         });
     }
 }

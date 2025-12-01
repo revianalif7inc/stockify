@@ -72,4 +72,20 @@ class StockService
     {
         return $this->movementRepository->deleteMovement($id);
     }
+
+    /**
+     * Approve pending stock movement
+     */
+    public function approveMovement($id)
+    {
+        return $this->movementRepository->approveMovement($id);
+    }
+
+    /**
+     * Reject pending stock movement
+     */
+    public function rejectMovement($id)
+    {
+        return $this->movementRepository->rejectMovement($id);
+    }
 }

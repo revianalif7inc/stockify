@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 class HistoryController extends Controller
 {
     /**
-     * Display confirmed stock movements history
+     * Display approved stock movements history
      */
     public function index(Request $request)
     {
@@ -31,10 +31,8 @@ class HistoryController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        // Only show confirmed items if status column exists
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $query->where('status', 'confirmed');
-        }
+        // Show approved/completed items
+        $query->whereIn('status', ['approved', 'completed']);
 
         $confirmed = $query->paginate(15);
 

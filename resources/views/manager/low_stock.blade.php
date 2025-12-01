@@ -66,7 +66,9 @@
         <div id="reorderModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div class="bg-slate-900 rounded-lg p-6 max-w-md w-full mx-4 border border-slate-700">
                 <h3 class="text-xl font-bold text-white mb-4">Pesan Ulang Stok</h3>
-                <form class="space-y-4">
+                <form id="reorderForm" method="POST" action="{{ route('manager.reorder.store') }}" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="product_id" id="productIdInput">
                     <div>
                         <label class="block mb-2 text-sm font-semibold text-slate-200">Produk</label>
                         <input type="text" id="productInput" disabled
@@ -74,22 +76,22 @@
                     </div>
                     <div>
                         <label class="block mb-2 text-sm font-semibold text-slate-200">Jumlah Pesanan</label>
-                        <input type="number" id="quantityInput" min="1" placeholder="Masukkan jumlah"
+                        <input type="number" id="quantityInput" name="quantity" min="1" placeholder="Masukkan jumlah" required
                             class="w-full px-4 py-2 rounded-lg text-sm border border-slate-700 focus:outline-none focus:ring-2 bg-slate-800 text-white">
                     </div>
                     <div>
                         <label class="block mb-2 text-sm font-semibold text-slate-200">Supplier</label>
-                        <select id="supplierInput"
+                        <select id="supplierInput" name="supplier_id" required
                             class="w-full px-4 py-2 rounded-lg text-sm border border-slate-700 focus:outline-none focus:ring-2 bg-slate-800 text-white">
-                            <option>Pilih Supplier</option>
-                            <option>Berkah Jaya</option>
-                            <option>JatiKur</option>
-                            <option>EL Pablo</option>
+                            <option value="">Pilih Supplier</option>
+                            @foreach($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div>
                         <label class="block mb-2 text-sm font-semibold text-slate-200">Catatan</label>
-                        <textarea id="notesInput" placeholder="Catatan pesanan..." rows="3"
+                        <textarea id="notesInput" name="notes" placeholder="Catatan pesanan..." rows="3"
                             class="w-full px-4 py-2 rounded-lg text-sm border border-slate-700 focus:outline-none focus:ring-2 bg-slate-800 text-white"></textarea>
                     </div>
                     <div class="flex gap-2">
@@ -111,7 +113,11 @@
         function openReorderModal(productId, productName) {
             currentProductId = productId;
             currentProductName = productName;
+            document.getElementById('productIdInput').value = productId;
             document.getElementById('productInput').value = productName;
+            document.getElementById('quantityInput').value = '';
+            document.getElementById('supplierInput').value = '';
+            document.getElementById('notesInput').value = '';
             document.getElementById('reorderModal').classList.remove('hidden');
         }
 

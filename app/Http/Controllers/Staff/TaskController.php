@@ -11,24 +11,19 @@ class TaskController extends Controller
     public function index()
     {
         $today = now()->toDateString();
-        // Barang masuk hari ini yang perlu diperiksa
+        // Barang masuk hari ini yang perlu diperiksa (pending)
         $incomingQuery = \App\Models\StockMovement::with('product', 'user')
             ->where('type', 'in')
+            ->where('status', 'pending') // Hanya pending
             ->whereDate('created_at', $today)
             ->orderBy('created_at', 'desc');
 
-        // Barang keluar hari ini yang perlu disiapkan
+        // Barang keluar hari ini yang perlu disiapkan (pending)
         $outgoingQuery = \App\Models\StockMovement::with('product', 'user')
             ->where('type', 'out')
+            ->where('status', 'pending') // Hanya pending
             ->whereDate('created_at', $today)
             ->orderBy('created_at', 'desc');
-
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $incomingQuery->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', '!=', 'confirmed'); });
-            $outgoingQuery->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', '!=', 'confirmed'); });
-        }
 
         $incoming = $incomingQuery->get();
         $outgoing = $outgoingQuery->get();

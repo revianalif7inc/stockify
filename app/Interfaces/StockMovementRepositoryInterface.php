@@ -8,4 +8,6 @@ interface StockMovementRepositoryInterface
     public function recordStockOut(array $data);
     public function updateMovement($id, array $data);
     public function deleteMovement($id);
+    public function approveMovement($id);
+    public function rejectMovement($id);
 }

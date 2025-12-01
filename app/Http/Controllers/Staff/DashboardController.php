@@ -19,51 +19,33 @@ class DashboardController extends Controller
 
         // Count pending barang masuk (today)
         $incomingPendingQuery = StockMovement::where('type', 'in')
+            ->where('status', 'pending') // Hanya pending
             ->whereDate('created_at', $today);
 
         // Count pending barang keluar (today)
         $outgoingPendingQuery = StockMovement::where('type', 'out')
+            ->where('status', 'pending') // Hanya pending
             ->whereDate('created_at', $today);
-
-        // If the 'status' column exists, only count unconfirmed items
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $incomingPendingQuery->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', '!=', 'confirmed');
-            });
-            $outgoingPendingQuery->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', '!=', 'confirmed');
-            });
-        }
 
         $incomingPending = $incomingPendingQuery->count();
         $outgoingPending = $outgoingPendingQuery->count();
 
-        // Count confirmed items (today)
-        $confirmedQuery = StockMovement::whereDate('created_at', $today);
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $confirmedQuery->where('status', 'confirmed');
-        }
+        // Count approved items (today)
+        $confirmedQuery = StockMovement::whereDate('created_at', $today)
+            ->where('status', 'approved'); // Approved items
         $confirmedToday = $confirmedQuery->count();
 
-        // Staff task list: barang masuk/keluar hari ini
+        // Staff task list: barang masuk/keluar hari ini yang pending
         $incomingQuery = StockMovement::with('product', 'user')
             ->where('type', 'in')
+            ->where('status', 'pending') // Hanya pending
             ->whereDate('created_at', $today)
             ->orderBy('created_at', 'desc');
         $outgoingQuery = StockMovement::with('product', 'user')
             ->where('type', 'out')
+            ->where('status', 'pending') // Hanya pending
             ->whereDate('created_at', $today)
             ->orderBy('created_at', 'desc');
-
-        // If the 'status' column exists, only include movements that are not confirmed
-        if (Schema::hasColumn('stock_movements', 'status')) {
-            $incomingQuery->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', '!=', 'confirmed');
-            });
-            $outgoingQuery->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', '!=', 'confirmed');
-            });
-        }
 
         $incoming = $incomingQuery->get();
         $outgoing = $outgoingQuery->get();
