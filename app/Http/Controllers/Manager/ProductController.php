@@ -141,6 +141,9 @@ class ProductController extends Controller
         ]);
 
         try {
+            // Get supplier name
+            $supplier = \App\Models\Supplier::findOrFail($validated['supplier_id']);
+
             // 1. Simpan reorder request
             \App\Models\ReorderRequest::create([
                 'product_id' => $validated['product_id'],
@@ -153,12 +156,17 @@ class ProductController extends Controller
 
             // 2. Buat stock in movement dengan status pending
             // Staff akan mengkonfirmasi ini nanti
+            $notes = 'Reorder dari supplier: ' . $supplier->name;
+            if (!empty($validated['notes'])) {
+                $notes .= ' (' . $validated['notes'] . ')';
+            }
+
             \App\Models\StockMovement::create([
                 'product_id' => $validated['product_id'],
                 'user_id' => auth()->id(),
                 'type' => 'in',
                 'quantity' => $validated['quantity'],
-                'notes' => 'Reorder dari supplier: ' . ($validated['notes'] ?? ''),
+                'notes' => $notes,
                 'status' => 'pending',
             ]);
 
